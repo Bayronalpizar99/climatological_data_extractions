@@ -1,0 +1,6 @@
+pandas
+lxml
+openpyxl
+firebase-admin
+Flask
+gunicorn
