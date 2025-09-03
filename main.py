@@ -4,20 +4,12 @@ from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials, firestore
 from flask import Flask
-
-# --- INICIALIZACIÓN DE LA APP FLASK ---
 app = Flask(__name__)
 
-# --- CONFIGURACIÓN DE FIREBASE ---
-# En Cloud Run, las credenciales se manejan de forma segura y automática.
-# No necesitamos el archivo serviceAccountKey.json en producción.
 try:
     cred = credentials.ApplicationDefault()
     firebase_admin.initialize_app(cred)
 except ValueError:
-    # Si da error, es probable que estemos probando localmente
-    # sin las credenciales de aplicación. Podemos ignorarlo para
-    # no romper la ejecución local si no se configura.
     print("ADVERTENCIA: No se pudo inicializar Firebase Admin SDK. ¿Ejecutando localmente sin credenciales?")
     pass
 
@@ -42,7 +34,6 @@ def ejecutar_extraccion():
     tabla_actuales = None
     tabla_horarios = None
 
-    # Identificar las tablas (tu lógica original)
     for tabla in tablas:
         column_str = "".join(str(col) for col in tabla.columns)
         if any(col in column_str for col in ['Vmax', 'SUM_lluv', 'LLUV_ayer']):
@@ -81,6 +72,4 @@ def ejecutar_extraccion():
     return "OK", 200
 
 if __name__ == "__main__":
-    # El servidor se ejecuta en el puerto que define la variable de entorno PORT
-    # Cloud Run establece esta variable automáticamente. Para pruebas locales, usa 8080.
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
