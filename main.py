@@ -63,8 +63,16 @@ def ejecutar_extraccion():
         for index, row in tabla_horarios.iterrows():
             dato_horario_dict = row.to_dict()
             dato_horario_dict['timestamp_extraccion_lote'] = timestamp_extraccion
-            hora_registro = str(row.get('Hora', index))
-            doc_id = timestamp_extraccion.strftime('%Y-%m-%d') + f"_{hora_registro}"
+            
+            # Usar la columna 'Fecha' si existe, o 'Hora' como fallback
+            if 'Fecha' in dato_horario_dict:
+                 fecha_celda = str(dato_horario_dict['Fecha']).replace('/', '-').replace(' ', '_').replace(':', '-')
+                 doc_id = f"horario_{fecha_celda}"
+            else:
+                 # Fallback al comportamiento anterior si la tabla cambia de formato
+                 hora_registro = str(row.get('Hora', index))
+                 doc_id = timestamp_extraccion.strftime('%Y-%m-%d') + f"_{hora_registro}"
+            
             db.collection('datos_horarios').document(doc_id).set(dato_horario_dict, merge=True)
         print(f"Guardados {len(tabla_horarios)} registros horarios en Firestore.")
 
