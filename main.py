@@ -33,23 +33,47 @@ def ejecutar_extraccion():
 
     tabla_actuales = None
     tabla_horarios = None
+    tabla_meteo = None
 
     for tabla in tablas:
         column_str = "".join(str(col) for col in tabla.columns)
         if any(col in column_str for col in ['Vmax', 'SUM_lluv', 'LLUV_ayer']):
             tabla_actuales = tabla.copy()
             print("-> Identificada como tabla de DATOS ACTUALES")
+        elif any(col in column_str for col in ['HR', 'Velocidad', 'Td']):
+            tabla_meteo = tabla.copy()
+            print("-> Identificada como tabla de DATOS METEOROLÓGICOS (HR/Viento)")
         elif len(tabla) > 5:
             tabla_horarios = tabla.copy()
             print("-> Identificada como tabla de HORARIOS")
 
     timestamp_extraccion = datetime.now()
 
+    # Procesar tabla meteorológica (HR, Velocidad, Td)
+    meteo_extra = {}
+    if tabla_meteo is not None:
+        tabla_meteo.columns = [str(c).strip() for c in tabla_meteo.columns]
+        fila_meteo = tabla_meteo.to_dict('records')[0]
+        # Los valores numéricos están en centésimas (e.g. 7221 → 72.21%)
+        # por el mismo problema de comma-decimal que afecta a Lluvia y Temp
+        campos_numericos_meteo = ['HR', 'Velocidad', 'Td', 'Temp', 'Sens termica', 'Sens_termica', 'Direccion']
+        for campo in campos_numericos_meteo:
+            if campo in fila_meteo:
+                try:
+                    fila_meteo[campo] = round(float(fila_meteo[campo]) / 100, 2)
+                except (ValueError, TypeError):
+                    pass  # Dejar el valor original si no es numérico
+        meteo_extra = {k: v for k, v in fila_meteo.items() if k != 'Fecha'}
+        print(f"Datos meteorológicos extras capturados: HR={meteo_extra.get('HR')}, Velocidad={meteo_extra.get('Velocidad')}")
+
     # Procesar y guardar tabla de datos actuales
     if tabla_actuales is not None:
         tabla_actuales.columns = [str(c).strip() for c in tabla_actuales.columns]
         datos_actuales_dict = tabla_actuales.to_dict('records')[0]
         datos_actuales_dict['timestamp_extraccion'] = timestamp_extraccion
+        # Incorporar datos meteorológicos adicionales (HR, Velocidad, Td) si están disponibles
+        if meteo_extra:
+            datos_actuales_dict.update(meteo_extra)
         doc_id = timestamp_extraccion.strftime('%Y-%m-%d_%H-%M-%S')
         db.collection('datos_actuales').document(doc_id).set(datos_actuales_dict)
         print(f"Guardados datos actuales en Firestore con ID: {doc_id}")
