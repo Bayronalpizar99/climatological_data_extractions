@@ -56,7 +56,7 @@ def ejecutar_extraccion():
         fila_meteo = tabla_meteo.to_dict('records')[0]
         # Los valores numéricos están en centésimas (e.g. 7221 → 72.21%)
         # por el mismo problema de comma-decimal que afecta a Lluvia y Temp
-        campos_numericos_meteo = ['HR', 'Velocidad', 'Td', 'Temp', 'Sens termica', 'Sens_termica', 'Direccion']
+        campos_numericos_meteo = ['HR', 'Velocidad', 'Td', 'Temp', 'Sens termica', 'Sens_termica', 'Sens térmica', 'Direccion']
         for campo in campos_numericos_meteo:
             if campo in fila_meteo:
                 try:
